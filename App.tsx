@@ -57,7 +57,6 @@ export default function App() {
     }
   };
 
-  // Grade Colors
   const getGradeColor = (grade: number) => {
       switch(grade) {
           case 1: return { bg: 'bg-green-500', text: 'text-green-600', border: 'border-green-600', soft: 'bg-green-100' };
@@ -83,7 +82,6 @@ export default function App() {
 
     return (
       <div className="flex flex-col h-full overflow-y-auto custom-scrollbar bg-kid-cream">
-        {/* Header Area */}
         <div className="relative pt-8 pb-16 px-4 bg-white rounded-b-[40px] shadow-sm mb-6">
             <div className="text-center">
                 <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-2 font-sans tracking-tight">
@@ -92,7 +90,6 @@ export default function App() {
                 <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Học mà chơi - Chơi mà học</p>
             </div>
             
-            {/* Grade Tabs */}
             <div className="flex justify-center gap-2 mt-8 flex-wrap">
                 {[1, 2, 3, 4, 5].map((grade) => {
                     const isActive = activeGrade === grade;
@@ -113,7 +110,6 @@ export default function App() {
             </div>
         </div>
 
-        {/* Game Grid */}
         <div className="w-full max-w-6xl mx-auto px-4 pb-20">
             <div className={`mb-6 flex items-center gap-3 ${theme.text}`}>
                 <div className={`p-2 rounded-xl ${theme.bg} text-white`}><Zap fill="currentColor"/></div>
@@ -130,10 +126,8 @@ export default function App() {
                             onClick={() => handlePlayMiniGame(game)}
                             className={`group relative overflow-hidden rounded-[32px] bg-white shadow-lg cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl border-b-[8px] border-gray-100 hover:border-${theme.border.split('-')[1]}-200`}
                         >
-                            {/* Card Header Color */}
                             <div className={`h-28 ${theme.bg} relative flex items-center justify-center overflow-hidden`}>
                                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                                {/* Shine Effect */}
                                 <div className="absolute top-0 -left-10 w-20 h-full bg-white/20 skew-x-12 blur-md animate-[shimmer_3s_infinite]"></div>
                                 
                                 <div className="transform group-hover:scale-125 transition-transform duration-300 group-hover:rotate-6">

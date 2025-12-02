@@ -7,8 +7,8 @@ export interface MiniGameIdea {
   example: string;
   leveling: string;
   category: 'logic' | 'arithmetic' | 'geometry' | 'memory';
-  type: 'builder' | 'collection' | 'choice' | 'balance' | 'sequence'; 
-  grade: 1 | 2 | 3 | 4 | 5; // Added grade level
+  type: 'builder' | 'collection' | 'choice' | 'balance' | 'sequence' | 'comparison' | 'drag_match'; 
+  grade: 1 | 2 | 3 | 4 | 5;
 }
 
 export interface TowerLevel {
@@ -19,15 +19,15 @@ export interface TowerLevel {
 
 export interface GenericGameLevel {
   question: string;
-  target?: number; // For collection/balance games
-  bgTheme?: string; // To trigger specific CSS backgrounds (e.g., underwater)
+  target?: number;
+  bgTheme?: string;
   options: {
     id: string | number;
-    value: any; // value to display (number, text)
-    isCorrect?: boolean; // For choice games
-    numericValue?: number; // For math calculation
-    content?: string; // Text content like "5 + 3"
-    style?: string; // Specific style override (e.g. color of fish)
+    value: any;
+    isCorrect?: boolean;
+    numericValue?: number;
+    content?: string;
+    style?: string;
   }[];
   hint?: string;
 }
@@ -37,9 +37,4 @@ export enum GameState {
   PLAYING,
   WON,
   LOST
-}
-
-export interface DragItem {
-  id: number;
-  value: number;
 }

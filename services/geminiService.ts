@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { TowerLevel, GenericGameLevel } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Fallback logic implemented directly. API is optional.
+const ai = import.meta.env.VITE_API_KEY ? new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY }) : null;
 
 // --- TOWER BUILDER GENERATOR ---
 export const generateTowerLevel = async (difficulty: 'easy' | 'medium' | 'hard'): Promise<TowerLevel> => {
@@ -18,6 +19,7 @@ export const generateTowerLevel = async (difficulty: 'easy' | 'medium' | 'hard')
       const maxBlockSize = difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 8 : 10);
       let nextBlock = Math.floor(Math.random() * Math.min(remaining, maxBlockSize)) + 1;
       
+      // Bias towards solvable chunks
       if (remaining > 1 && nextBlock === 1 && Math.random() > 0.3) {
           nextBlock = Math.min(remaining, 2); 
       }
@@ -46,18 +48,19 @@ export const generateTowerLevel = async (difficulty: 'easy' | 'medium' | 'hard')
 
 // --- MINI GAMES GENERATOR ---
 export const generateMiniGameData = async (gameId: string, difficulty: string): Promise<GenericGameLevel> => {
+    // Priority: Local logic for speed and reliability
     return generateLocalMiniGame(gameId, difficulty);
 };
 
 const generateLocalMiniGame = (gameId: string, diff: string): GenericGameLevel => {
-    const isHard = diff === 'medium' || diff === 'hard'; 
-    
     switch (gameId) {
         // --- GRADE 1 ---
+        case 'drag_calc':
+             return generateMathChoiceGame(10, 'sum', 'Kéo số vào ô trống: 5 + __ = 8'); // Simplified for choice engine currently
         case 'fish_catch':
             return generateFishGame();
         case 'gift_box':
-            return generateMathChoiceGame(10, 'sum', 'Chọn nắp hộp đúng nhé:');
+            return generateMathChoiceGame(10, 'sub', 'Tìm đáp án để đóng hộp:');
         case 'color_match':
             return generateColorMatchGame();
         case 'farm_harvest':
@@ -65,32 +68,32 @@ const generateLocalMiniGame = (gameId: string, diff: string): GenericGameLevel =
 
         // --- GRADE 2 ---
         case 'path_finder':
-            return generatePathFinderGame(20); // Sum up to 20
+            return generatePathFinderGame(20);
         case 'puzzle_sum':
-            return generateMathChoiceGame(20, 'sum', 'Mảnh ghép nào còn thiếu?');
+            return generateMathChoiceGame(20, 'mul', 'Mảnh ghép nào đúng?'); // Multiplication intro
         case 'balance_scale':
             return generateBalanceGame(20);
         case 'bridge_builder':
-             return generateCollectionGame(['🪵', '🪵', '🪨'], 10, 'Xây cầu dài', false, 'mét', true);
+             return generateCollectionGame(['🪵', '🪵', '🪨'], 10, 'Xây cầu dài', false, 'm', true);
         case 'bubble_pop':
-             return generateMathChoiceGame(20, 'sub', 'Bắn bóng bay lên!');
+             return generateMathChoiceGame(20, 'sum', 'Bắn bóng có tổng đúng!');
 
         // --- GRADE 3 ---
-        case 'collect_items_mul':
-             return generateCollectionGame(['🍬', '🍪', '🍫'], 20, 'Mua đồ', true, '', false, true); // Multiplication mode
+        case 'collect_upgrade':
+             return generateCollectionGame(['💎', '🛡️', '⚔️'], 50, 'Mua trang bị', true, 'vàng');
         case 'treasure_hunt':
-             return generateTreasureGame(100); // Larger range
+             return generateTreasureGame(50);
         case 'matrix_run':
-             return generateSequenceGame(false, 'multiply');
+             return generateSequenceGame(false, 'add');
 
         // --- GRADE 4 ---
         case 'ladder_climb':
-             return generateSequenceGame(true, 'add'); // Harder sequence
+             return generateSequenceGame(true, 'mul');
         case 'bridge_advanced':
-             return generateCollectionGame(['🏗️', '🧱'], 50, 'Xây cầu lớn', false, 'm', true);
+             return generateCollectionGame(['🏗️', '🧱'], 100, 'Xây cầu lớn', false, 'm', true);
 
         // --- GRADE 5 ---
-        case 'maze_master':
+        case 'maze_calc':
              return generateEquationGame();
 
         default:
@@ -98,26 +101,27 @@ const generateLocalMiniGame = (gameId: string, diff: string): GenericGameLevel =
     }
 }
 
-// --- SPECIFIC GAME LOGIC ---
+// --- SPECIFIC GAME LOGIC IMPLEMENTATIONS ---
 
 const generateFishGame = (): GenericGameLevel => {
-    const target = Math.floor(Math.random() * 9) + 1;
-    const styles = ['text-blue-500', 'text-orange-500', 'text-red-500', 'text-purple-500'];
+    const target = Math.floor(Math.random() * 10) + 5; // e.g., > 7
+    const isGreater = Math.random() > 0.5;
     
-    // Create options: Fish with numbers
+    // Create options
     const options = [];
-    // Correct fish
-    options.push({ id: 'c', value: '🐟', numericValue: target, content: `${target}`, isCorrect: true, style: styles[Math.floor(Math.random()*styles.length)] });
+    // Correct fish (meets criteria)
+    const correctVal = isGreater ? target + Math.floor(Math.random() * 5) + 1 : target - Math.floor(Math.random() * 3) - 1;
+    options.push({ id: 'c', value: '🐟', numericValue: correctVal, content: `${correctVal}`, isCorrect: true, style: 'text-blue-500' });
     
     // Wrong fish
     for(let i=0; i<3; i++) {
-        let val = Math.floor(Math.random() * 9) + 1;
-        while(val === target) val = Math.floor(Math.random() * 9) + 1;
-        options.push({ id: `w${i}`, value: '🐠', numericValue: val, content: `${val}`, isCorrect: false, style: styles[Math.floor(Math.random()*styles.length)] });
+        let val = isGreater ? target - Math.floor(Math.random() * 5) - 1 : target + Math.floor(Math.random() * 5) + 1;
+        if (val < 0) val = 0;
+        options.push({ id: `w${i}`, value: '🐠', numericValue: val, content: `${val}`, isCorrect: false, style: 'text-orange-500' });
     }
 
     return {
-        question: `Bắt chú cá mang số ${target} nhé!`,
+        question: `Bắt chú cá mang số ${isGreater ? 'LỚN HƠN' : 'NHỎ HƠN'} ${target} nhé!`,
         bgTheme: 'underwater',
         options: options.sort(() => Math.random() - 0.5)
     };
@@ -131,22 +135,20 @@ const generateColorMatchGame = (): GenericGameLevel => {
         { name: 'Tím', class: 'bg-purple-500' }
     ];
     const chosenColor = colors[Math.floor(Math.random() * colors.length)];
-    const val1 = Math.floor(Math.random() * 5);
-    const val2 = Math.floor(Math.random() * 5);
-    const sum = val1 + val2;
-
-    const options = colors.map(c => ({
-        id: c.name,
-        value: '', // No emoji needed, just color bubble
-        style: c.class,
-        isCorrect: c.name === chosenColor.name
-    }));
-
+    const val = Math.floor(Math.random() * 9) + 1;
+    
+    // Logic: "Select the RED ball with number 5"
+    // Or Math: "Red ball = 5. Blue ball = 3. Calculate Red + Blue?" -> Too complex for UI.
+    // Simple Logic: "Chọn bóng màu [MÀU] có số [SỐ]"
+    
     return {
-        question: `Chọn bóng màu ${chosenColor.name} có kết quả bằng ${sum}?`, // Simplified logic: Just pick color matching specific target? Actually let's make it math based.
-        // Better logic: "5 + 3 = ? (Màu Đỏ)". User picks Red bubble with 8. 
-        // For simplicity in this engine: "Chọn bóng MÀU ${chosenColor.name}"
-        options: options,
+        question: `Chọn bóng màu ${chosenColor.name}!`,
+        options: colors.map(c => ({
+            id: c.name,
+            value: '', 
+            style: c.class,
+            isCorrect: c.name === chosenColor.name
+        })),
         hint: 'Màu sắc'
     };
 }
@@ -168,8 +170,7 @@ const generateEquationGame = (): GenericGameLevel => {
     }
 }
 
-// Reuse existing generators with tweaks
-const generateCollectionGame = (emojis: string[], maxItemsInPool: number, actionVerb: string, hasPrice = false, unit = '', isBridge = false, isMul = false): GenericGameLevel => {
+const generateCollectionGame = (emojis: string[], maxItemsInPool: number, actionVerb: string, hasPrice = false, unit = '', isBridge = false): GenericGameLevel => {
     const minTarget = 4;
     const maxTarget = Math.max(minTarget + 1, maxItemsInPool - 2); 
     const target = Math.floor(Math.random() * (maxTarget - minTarget)) + minTarget;
@@ -179,14 +180,6 @@ const generateCollectionGame = (emojis: string[], maxItemsInPool: number, action
     
     while (currentSum < target) {
         let val = Math.floor(Math.random() * (target - currentSum)) + 1;
-        if (isMul) {
-             // For multiplication game: items are bundles. e.g. target 20. bundle of 5.
-             // Simplified for Collection engine: Just standard addition but formatted as price/packs
-        }
-        
-        if (val === 1 && (target - currentSum) > 1 && Math.random() > 0.2) {
-             val = Math.floor(Math.random() * (target - currentSum)) + 1;
-        }
         if (currentSum + val > target) val = target - currentSum;
         
         let display = "";
@@ -196,7 +189,7 @@ const generateCollectionGame = (emojis: string[], maxItemsInPool: number, action
             const bars = "=".repeat(val);
             display = `[${bars} ${val}${unit} ${bars}]`;
         } else if (hasPrice) {
-            display = `${baseEmoji} $${val}`;
+            display = `${baseEmoji} ${val}${unit}`;
         } else {
             display = Array(val).fill(baseEmoji).join('');
         }
@@ -210,8 +203,8 @@ const generateCollectionGame = (emojis: string[], maxItemsInPool: number, action
         currentSum += val;
     }
 
-    const distractorCount = 3;
-    for (let i = 0; i < distractorCount; i++) {
+    // Add distractors
+    for (let i = 0; i < 3; i++) {
         const val = Math.floor(Math.random() * 5) + 1;
         const baseEmoji = emojis[Math.floor(Math.random() * emojis.length)];
         let display = "";
@@ -219,7 +212,7 @@ const generateCollectionGame = (emojis: string[], maxItemsInPool: number, action
              const bars = "=".repeat(val);
              display = `[${bars} ${val}${unit} ${bars}]`;
         } else if (hasPrice) {
-            display = `${baseEmoji} $${val}`;
+            display = `${baseEmoji} ${val}${unit}`;
         } else {
             display = Array(val).fill(baseEmoji).join('');
         }
@@ -232,13 +225,13 @@ const generateCollectionGame = (emojis: string[], maxItemsInPool: number, action
     }
 
     return {
-        question: `${actionVerb} đủ ${hasPrice ? '$' : ''}${target}${unit ? ' ' + unit : ''} nhé!`,
+        question: `${actionVerb} đủ ${target}${unit} nhé!`,
         target: target,
         options: options.sort(() => Math.random() - 0.5)
     };
 }
 
-const generateMathChoiceGame = (range: number, type: 'sum' | 'sub', customPrompt?: string): GenericGameLevel => {
+const generateMathChoiceGame = (range: number, type: 'sum' | 'sub' | 'mul', customPrompt?: string): GenericGameLevel => {
     const a = Math.floor(Math.random() * range) + 1;
     const b = Math.floor(Math.random() * range) + 1;
     
@@ -248,11 +241,16 @@ const generateMathChoiceGame = (range: number, type: 'sum' | 'sub', customPrompt
     if (type === 'sum') {
         question = `${a} + ${b} = ?`;
         ans = a + b;
-    } else {
+    } else if (type === 'sub') {
         const max = Math.max(a, b);
         const min = Math.min(a, b);
         question = `${max} - ${min} = ?`;
         ans = max - min;
+    } else {
+        const ma = Math.floor(Math.random() * 9) + 1;
+        const mb = Math.floor(Math.random() * 5) + 1;
+        question = `${ma} x ${mb} = ?`;
+        ans = ma * mb;
     }
 
     const opts = new Set([ans]);
@@ -311,7 +309,7 @@ const generateBalanceGame = (targetWeight: number): GenericGameLevel => {
      const current = Math.floor(Math.random() * (targetWeight - 1)) + 1;
      const needed = targetWeight - current;
      return {
-         question: `Cân lệch! Bên trái ${targetWeight}kg, phải ${current}kg.`,
+         question: `Cân lệch! Bên trái ${targetWeight}kg, phải ${current}kg. Thêm bao nhiêu?`,
          options: [
              { id: '1', value: `${needed}kg`, isCorrect: true },
              { id: '2', value: `${needed + 2}kg`, isCorrect: false },
@@ -321,7 +319,7 @@ const generateBalanceGame = (targetWeight: number): GenericGameLevel => {
      }
 }
 
-const generateSequenceGame = (isHard: boolean, type: 'add'|'multiply' = 'add'): GenericGameLevel => {
+const generateSequenceGame = (isHard: boolean, type: 'add'|'multiply'|'mul' = 'add'): GenericGameLevel => {
     const start = Math.floor(Math.random() * 5) + 1;
     const step = Math.floor(Math.random() * 3) + 2; 
     let seq: number[] = [];
@@ -336,7 +334,7 @@ const generateSequenceGame = (isHard: boolean, type: 'add'|'multiply' = 'add'): 
     }
     
     return {
-        question: `Điền số tiếp theo vào thang: ${seq.join(', ')}, ...`,
+        question: `Điền số tiếp theo: ${seq.join(', ')}, ...`,
         options: [
             { id: '1', value: next, isCorrect: true },
             { id: '2', value: next + 1, isCorrect: false },

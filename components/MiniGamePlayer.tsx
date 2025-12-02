@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MiniGameIdea, GenericGameLevel, GameState } from '../types';
 import { generateMiniGameData, generateEncouragement } from '../services/geminiService';
-import { ArrowLeft, RefreshCw, CheckCircle, Trophy, Home, DoorOpen, Fish, Gift } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle, Trophy, Home, DoorOpen, Gift } from 'lucide-react';
 
 interface MiniGamePlayerProps {
   gameInfo: MiniGameIdea;
@@ -22,7 +22,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
     setSelectedOptions([]);
     setMessage("");
     
-    // Generate data instantly using local logic
     const diff = streak > 3 ? 'medium' : 'easy';
     const data = await generateMiniGameData(gameInfo.id, diff);
     
@@ -42,8 +41,7 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
   const handleOptionClick = async (option: any) => {
     if (gameState !== GameState.PLAYING) return;
 
-    // --- LOGIC: CHOICE TYPE (Single Click Win/Lose) ---
-    if (gameInfo.type === 'choice' || gameInfo.type === 'sequence') {
+    if (gameInfo.type === 'choice' || gameInfo.type === 'sequence' || gameInfo.type === 'comparison' || gameInfo.type === 'drag_match') {
         if (option.isCorrect) {
             setGameState(GameState.WON);
             setMessage(await generateEncouragement(true));
@@ -51,7 +49,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
             setMessage("Chưa đúng rồi, thử đáp án khác nhé!");
         }
     } 
-    // --- LOGIC: COLLECTION TYPE (Multi Select Sum) ---
     else {
         let newSelection = [...selectedOptions];
         if (newSelection.includes(option.id)) {
@@ -81,11 +78,9 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
 
   const isEmoji = (str: string) => /\p{Emoji}/u.test(str);
 
-  // --- VISUAL HELPERS ---
   const getButtonVisuals = (option: any) => {
       const isSelected = selectedOptions.includes(option.id);
       
-      // FISH CATCH: Bubbles with Fish
       if (gameInfo.id === 'fish_catch') {
           return {
               containerClass: `relative rounded-full aspect-square flex flex-col items-center justify-center shadow-lg transform transition-all hover:scale-110 
@@ -99,7 +94,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           }
       }
 
-      // GIFT BOX: Square boxes
       if (gameInfo.id === 'gift_box') {
           return {
               containerClass: `relative rounded-3xl aspect-square flex flex-col items-center justify-center shadow-[0_10px_0_rgb(0,0,0,0.1)] border-4 border-pink-300 transform transition-all active:translate-y-2 active:shadow-none
@@ -113,7 +107,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           }
       }
 
-      // COLOR MATCH: Simple colored circles
       if (gameInfo.id === 'color_match') {
           return {
               containerClass: `relative rounded-full aspect-square flex items-center justify-center shadow-lg border-4 border-white transform transition-transform hover:scale-105 ${option.style}`,
@@ -121,7 +114,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           }
       }
 
-      // LADDER: Rung style
       if (gameInfo.id === 'ladder_climb') {
           return {
               containerClass: "w-full bg-amber-100 border-y-8 border-amber-800 h-20 flex items-center justify-center shadow-md relative my-2 hover:bg-amber-200",
@@ -129,7 +121,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           }
       }
 
-      // BRIDGE BUILDER
       if (gameInfo.id.includes('bridge')) {
           const widthClass = option.numericValue >= 8 ? 'w-full' : (option.numericValue >= 5 ? 'w-3/4' : 'w-1/2');
           return {
@@ -138,7 +129,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           };
       }
       
-      // PUZZLE
       if (gameInfo.id === 'puzzle_sum') {
           return {
               containerClass: "bg-purple-100 border-2 border-purple-300 rounded-xl shadow-md relative overflow-hidden aspect-square flex items-center justify-center hover:bg-purple-200",
@@ -146,7 +136,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           };
       }
 
-      // MAZE / DOORS
       if (gameInfo.id.includes('path') || gameInfo.id.includes('maze')) {
           return {
               containerClass: "bg-blue-600 border-x-4 border-t-4 border-blue-800 rounded-t-full shadow-lg aspect-[3/4] flex flex-col items-center justify-end pb-4 hover:bg-blue-500",
@@ -159,14 +148,12 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           }
       }
 
-      // FARM / SHOPPING / DEFAULT
       return {
           containerClass: `bg-white border-b-[6px] border-gray-200 rounded-3xl shadow-lg p-2 min-h-[120px] flex items-center justify-center ${isSelected ? 'ring-4 ring-green-400 bg-green-50' : ''}`,
           content: <div className={isEmoji(String(option.value)) ? 'text-5xl' : 'text-3xl font-black text-gray-700'}>{option.value}</div>
       };
   };
 
-  // Background Theme Logic
   const getBackground = () => {
       if (level?.bgTheme === 'underwater') return "bg-gradient-to-b from-cyan-200 to-blue-500";
       return "bg-gradient-to-b from-blue-50 to-white";
@@ -184,7 +171,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
   return (
     <div className={`flex flex-col h-full ${getBackground()} relative overflow-hidden font-sans`}>
       
-      {/* Background Decor */}
       {level?.bgTheme === 'underwater' && (
           <>
             <div className="absolute top-10 left-10 text-6xl opacity-20 animate-bounce delay-1000">🫧</div>
@@ -193,7 +179,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
           </>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md shadow-sm z-10 sticky top-0">
         <button onClick={onBack} className="p-3 hover:bg-gray-100 rounded-full transition bg-white shadow-sm border border-gray-100">
             <ArrowLeft className="text-gray-600" size={24}/>
@@ -210,14 +195,10 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
         </button>
       </div>
 
-      {/* Game Area */}
       <div className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto w-full custom-scrollbar">
-        
-        {/* Question Card */}
         <div className="w-full max-w-2xl bg-white rounded-[32px] p-6 md:p-8 shadow-xl mb-6 text-center border-b-[6px] border-kid-purple relative z-10">
              <h3 className="text-xl md:text-3xl font-bold text-gray-700 mb-4 leading-relaxed">{level?.question}</h3>
              
-             {/* Target Display for Collection Games */}
              {gameInfo.type === 'collection' && level?.target && (
                  <div className="inline-flex flex-col items-center bg-orange-50 px-6 py-2 rounded-2xl border-2 border-orange-100">
                      <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Mục tiêu</span>
@@ -225,7 +206,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
                  </div>
              )}
 
-             {/* Hint */}
              {level?.hint && <div className="mt-2 text-sm text-gray-400 italic">Gợi ý: {level.hint}</div>}
              
              {message && gameState !== GameState.WON && (
@@ -235,7 +215,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
              )}
         </div>
 
-        {/* Dynamic Options Grid */}
         <div className={`
             grid gap-4 w-full max-w-2xl pb-24
             ${gameInfo.id === 'bridge_builder' || gameInfo.id === 'ladder_climb' ? 'grid-cols-1' : (level?.options.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3')}
@@ -263,7 +242,6 @@ const MiniGamePlayer: React.FC<MiniGamePlayerProps> = ({ gameInfo, onBack }) => 
         </div>
       </div>
 
-      {/* Win Modal */}
       {gameState === GameState.WON && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
             <div className="bg-white rounded-[40px] p-8 max-w-sm w-full text-center shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300 border-4 border-white">
