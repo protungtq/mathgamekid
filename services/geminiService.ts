@@ -1,8 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { TowerLevel, GenericGameLevel } from '../types';
 
-// Fallback logic implemented directly. API is optional.
-const ai = import.meta.env.VITE_API_KEY ? new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY }) : null;
+// Safely access env vars using optional chaining to prevent runtime errors
+const apiKey = import.meta.env?.VITE_API_KEY;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 // --- TOWER BUILDER GENERATOR ---
 export const generateTowerLevel = async (difficulty: 'easy' | 'medium' | 'hard'): Promise<TowerLevel> => {
